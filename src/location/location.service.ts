@@ -29,6 +29,20 @@ export class LocationService {
         return this.locationsRepository.save(location);
     }
 
+    async update(id: string, updatedLocation: Location): Promise<Location> {
+        const location = await this.findOne(id);
+
+        if (!location) {
+            throw new NotFoundException(`Location with ID ${id} not found`);
+        }
+
+        location.cep = updatedLocation.cep;
+        location.city = updatedLocation.city;
+        location.state = updatedLocation.state;
+
+        return this.locationsRepository.save(location);
+    }
+
     async remove(id: string): Promise<void> {
         const location = await this.findOne(id);
 

@@ -7,15 +7,15 @@ import { Flight } from './flight';
 export class FlightService {
     constructor(
         @InjectRepository(Flight)
-        private airportsRepository: Repository<Flight>,
+        private flightRepository: Repository<Flight>,
     ) {}
 
     findAll(): Promise<Flight[]> {
-        return this.airportsRepository.find({ relations: ['source', 'destiny'] });
+        return this.flightRepository.find({ relations: ['source', 'destiny'] });
     }
 
     async findOne(id: string): Promise<Flight> {
-        const airport = await this.airportsRepository.findOne({ where: { id: id }, relations: ['_source', '_destiny'] });
+        const airport = await this.flightRepository.findOne({ where: { id: id }, relations: ['source', 'destiny'] });
 
         if (!airport) {
             throw new NotFoundException(`Airport with ID ${id} not found`);
@@ -32,18 +32,39 @@ export class FlightService {
             this.validateSameDayDestiny(flight)
         ]);
 
-        return this.airportsRepository.save(flight);
+        return this.flightRepository.save(flight);
+    }
+
+    async update(id: string, updatedFlight: Flight): Promise<Flight> {
+        const existingFlight = await this.findOne(id);
+
+        if (!existingFlight) {
+            throw new NotFoundException(`Flight with ID ${id} not found`);
+        }
+
+        existingFlight.source = updatedFlight.source;
+        existingFlight.destiny = updatedFlight.destiny;
+        existingFlight.date = updatedFlight.date;
+
+        existingFlight.validateLocations();
+
+        await Promise.all([
+            this.validateFlightHour(existingFlight),
+            this.validateSameDayDestiny(existingFlight)
+        ]);
+
+        return this.flightRepository.save(existingFlight);
     }
 
 
     async remove(id: string): Promise<void> {
         const airport = await this.findOne(id);
 
-        await this.airportsRepository.delete(airport.id)
+        await this.flightRepository.delete(airport.id)
     }
 
     async findFlightsBetweenDates(startDate: Date, endDate: Date, flightId: string): Promise<Flight[]> {
-        const flights = await this.airportsRepository.find({
+        const flights = await this.flightRepository.find({
             where: {
                 date: Between(startDate, endDate),
                 id: Not(flightId)
@@ -77,7 +98,7 @@ export class FlightService {
         const sameDayEnd = new Date(flight.date);
         sameDayEnd.setHours(23, 59, 59, 999);
 
-        const existingFlights = await this.airportsRepository.find({
+        const existingFlights = await this.flightRepository.find({
             where: {
                 destiny: flight.destiny,
                 date: Between(sameDayStart, sameDayEnd),

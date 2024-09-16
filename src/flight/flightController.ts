@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, NotFoundException } from '@nestjs/common';
+import {Controller, Get, Post, Body, Param, Delete, NotFoundException, Put} from '@nestjs/common';
 import { FlightService } from './flight.service';
 import { Flight } from './flight';
 import { LocationService } from '../location/location.service';
@@ -31,6 +31,15 @@ export class FlightController {
         return this.flightService.create(flight);
     }
 
+    @Put(':id')
+    async update(@Param('id') id: string, @Body() flightInput: CreateFlightDto) {
+        const source = await this.locationService.findOne(flightInput.source_id);
+        const destiny = await this.locationService.findOne(flightInput.destiny_id);
+
+        const updatedFlight = new Flight(source, destiny, flightInput.date);
+
+        return this.flightService.update(id, updatedFlight);
+    }
 
     @Delete(':id')
     remove(@Param('id') id: string) {

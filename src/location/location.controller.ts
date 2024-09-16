@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete } from '@nestjs/common';
+import {Controller, Get, Post, Body, Param, Delete, Put} from '@nestjs/common';
 import { LocationService } from './location.service';
 import {CreateLocationDto} from "./dto/create-location.dto";
 import {Location} from "./location";
@@ -22,6 +22,12 @@ export class LocationController {
         const location: Location = new Location(inputLocation.cep, inputLocation.city, inputLocation.state);
 
         return this.locationsService.create(location);
+    }
+
+    @Put(':id')
+    update(@Param('id') id: string, @Body() inputLocation: CreateLocationDto) {
+        const updatedLocation: Location = new Location(inputLocation.cep, inputLocation.city, inputLocation.state);
+        return this.locationsService.update(id, updatedLocation);
     }
 
     @Delete(':id')
